@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Categories;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CategoriesController extends Controller
 {
@@ -31,11 +32,19 @@ class CategoriesController extends Controller
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
-        //
+        if(Auth::user()->hasRole('admin')) {
+            $request->validate([
+                'name' => 'required'
+            ]);
+
+            return Categories::create(['name' => $request->name]);
+        } else {
+            return Response()->json("You should be admin to do this!", 404);
+        }
     }
 
     /**

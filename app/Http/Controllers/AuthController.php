@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ConfirmEmail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
@@ -18,15 +20,28 @@ class AuthController extends Controller
             'gender' => 'required'
         ]);
 
+        $exists = User::where('email', $request->email)->first();
+
+        if($exists) {
+            return Response()->json("A user with this email already exists!", 401);
+        }
+
         if($request->hasFile('avatar')) {
             $file = $request['avatar']->getClientOriginalName();
             $name = pathinfo($file, PATHINFO_FILENAME);
             $ext = pathinfo($file, PATHINFO_EXTENSION);
             $image = time().'-'.$name.'.'.$ext;
             Storage::putFileAs('public/', $request['avatar'], $image);
+            $user = User::create(['name' => $request->name, 'email' => $request->email, 'password' => Hash::make($request->password), 'gender' => $request->gender, 'avatar' => $image]);
+            $user->assignRole('user');
+            Mail::to($request->email)->send(new ConfirmEmail());
+            return $user;
         }
 
-        return User::create(['name' => $request->name, 'email' => $request->email, 'password' => Hash::make($request->password), 'gender' => $request->gender, 'avatar' => $image]);
+        $user = User::create(['name' => $request->name, 'email' => $request->email, 'password' => Hash::make($request->password), 'gender' => $request->gender]);
+        $user->assignRole('user');
+        Mail::to($request->email)->send(new ConfirmEmail($user->id));
+        return $user;
     }
 
     public function login(Request $request) {
@@ -36,14 +51,18 @@ class AuthController extends Controller
         ]);
 
         if(!Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-            return 'User is not authenticated';
+            return Response('Email or password is wrong!', 401);
         };
 
         $user = Auth::user();
 
-        $token = $user->createToken('logintoken')->plainTextToken;
+        if($user->is_verified) {
+            $token = $user->createToken('logintoken')->plainTextToken;
 
-        return $token;
+            return $token;
+        }
+
+        return Response('You should verify your email before you login!', 401);
     }
 
     public function logout() {
@@ -54,14 +73,9 @@ class AuthController extends Controller
         return response()->json('Successfully logged out');
     }
 
-    public function profilepic($id) {
-        $filename = User::findOrFail($id)->avatar;
-        $file = Storage::disk('public')->get($filename);
-        return response($file, 200)
-        ->header('Content-Type', 'image/*');
-    }
-
     public function user() {
+        Auth::user()->setAttribute('isAdmin', Auth::user()->hasRole('admin'));
         return Auth::user();
     }
+
 }

@@ -11,18 +11,22 @@ class Post extends Model
 
     protected $fillable = [
         'title',
-        'flair',
         'subreddit_id',
         'content',
+        'postfile',
         'user_id'
     ];
 
     public function user() {
-        return $this->belongsTo(Post::class);
+        return $this->belongsTo(User::class);
     }
 
     public function subreddit() {
         return $this->belongsTo(Subreddit::class);
+    }
+
+    public function votes() {
+        return $this->belongsToMany(User::class)->withPivot('type');
     }
 
     public function comments() {

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
+
 // use App\Models\Interests;
 // use App\Models\Post;
 // use App\Models\Subreddit;
@@ -14,7 +16,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -26,7 +28,8 @@ class User extends Authenticatable
         'email',
         'password',
         'gender',
-        'avatar'
+        'avatar',
+        'cover'
     ];
 
     public function interests() {
@@ -43,6 +46,15 @@ class User extends Authenticatable
 
     public function comments() {
         return $this->hasMany(Comment::class);
+    }
+
+    public function votedPosts() {
+        return $this->belongsToMany(Post::class)->withPivot('type');
+    }
+
+
+    public function votedComments() {
+        return $this->belongsToMany(Comment::class)->withPivot('type');
     }
 
     /**

@@ -16,12 +16,13 @@ return new class extends Migration
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->string('flair');
             $table->unsignedBigInteger('subreddit_id');
             $table->string('content');
+            $table->string('postfile')->nullable();
             $table->unsignedBigInteger('user_id');
+            $table->bigInteger('votes')->default(0)->nullable();
             $table->timestamps();
-            
+
             $table->foreign('subreddit_id')->references('id')->on('subreddits');
             $table->foreign('user_id')->references('id')->on('users');
         });

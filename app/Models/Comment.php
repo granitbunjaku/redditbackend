@@ -22,6 +22,10 @@ class Comment extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function votes() {
+        return $this->belongsToMany(User::class)->withPivot('type');
+    }
+
     public function post() {
         return $this->belongsTo(Post::class);
     }
@@ -31,7 +35,7 @@ class Comment extends Model
     }
 
     public function parent() {
-        return $this->belongsToOne(static::class, 'comment_id');
+        return $this->belongsTo(static::class, 'comment_id');
     }
     public function children() {
         return $this->hasMany(static::class, 'comment_id')->orderBy('id', 'asc');

@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('password');
             $table->string('gender');
             $table->string('avatar')->default('nopfp.jpg');
+            $table->string('cover')->default('nocover.jpg');
+            $table->integer('karma')->default(0);
             $table->rememberToken();
             $table->timestamps();
         });

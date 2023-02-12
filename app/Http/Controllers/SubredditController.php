@@ -2,37 +2,37 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Post;
 use App\Models\Subreddit;
+use Exception;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Psy\Exception\ErrorException;
+use function PHPUnit\Framework\isNull;
 
 class SubredditController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index()
     {
-        return Subreddit::get();
-    }
+        $subreddits = [];
 
+        foreach (Subreddit::orderByDesc("members")->get() as $p){
+            $user = $p->users()->find(Auth::id());
+            $subreddit = ["data" => $p ,"role" => $user ? "moderator" : "user"];
 
-    public function readSpecificSubreddit(Request $request)
-    {
-        $subreddit = Subreddit::where('name', $request->name)->first();
-
-        $user = $subreddit->users()->find(Auth::id());
-        $moderators = $subreddit->users()->where('moderator', '1')->get();
-
-        if ($user) {
-            return ["data" => $subreddit, "isJoined" => true, "isModerator" => $user->pivot->moderator, 'moderators' => $moderators];
+            $subreddits[] = $subreddit;
         }
 
-        return ["data" => $subreddit, "isJoined" => false, 'moderators' => $moderators];
+        return Response()->json($subreddits);
     }
+
     /**
      * Store a newly created resource in storage.
      *
@@ -57,8 +57,27 @@ class SubredditController extends Controller
             return $subreddit->id;
         } else {
             return Response('Category doesnt exist', 404);
-        };
+        }
 
+    }
+
+    private function getSubredditPosts($id, $name) {
+        $posts = [];
+        $subreddit = Subreddit::where("name", $name)->first();
+
+        foreach ($subreddit->posts()->orderByDesc("id")->get() as $p){
+            $posts[] = PostController::postData($id, $p);
+        }
+
+        return $posts;
+    }
+
+    public function subredditPostsNotAuth($name) {
+        return Response()->json($this->getSubredditPosts(null, $name));
+    }
+
+    public function subredditPosts($name) {
+        return Response()->json($this->getSubredditPosts(Auth::id(), $name));
     }
 
     function joinSubreddit(Request $request) {
@@ -96,11 +115,34 @@ class SubredditController extends Controller
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function show($id)
+    public function show($name)
     {
-        //
+        return Response()->json($this->showSubreddit(Auth::id(), $name));
+    }
+
+    public function showSubNotAuth($name)
+    {
+        return Response()->json($this->showSubreddit(null, $name));
+    }
+
+    private function showSubreddit($id, $name) {
+        $subreddit = Subreddit::where('name', $name)->first();
+
+        if(!$subreddit) {
+            abort(404);
+        }
+
+        $user = $id ? $subreddit->users()->get()->find($id) : null;
+
+        $moderators = $subreddit->users()->where('moderator', '1')->get();
+
+        if ($user) {
+            return ["data" => $subreddit, "isJoined" => true, "isModerator" => $user->pivot->moderator, 'moderators' => $moderators];
+        }
+
+        return ["data" => $subreddit, "isJoined" => false, 'moderators' => $moderators];
     }
 
     /**
