@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('avatar')->default('nopfp.jpg');
             $table->string('cover')->default('nocover.jpg');
             $table->integer('karma')->default(0);
+            $table->boolean('is_Verified')->default(false);
             $table->rememberToken();
             $table->timestamps();
         });

@@ -19,7 +19,7 @@ class PhotosController extends Controller
     static function updatePhotos($id, $model, $request) {
         $item = $model::findOrFail($id);
         $fileDest = $request->fileDest;
-        $arr = ['nocover.jpg', 'nopfp.jpg', 'subreddit-noprofile.jpg'];
+        $arr = ['nocover.jpg', 'nopfp.jpg', 'noprofile.jpg'];
 
         if($request->hasFile("file")) {
             $file = $request["file"]->getClientOriginalName();

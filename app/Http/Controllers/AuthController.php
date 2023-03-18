@@ -34,7 +34,7 @@ class AuthController extends Controller
             Storage::putFileAs('public/', $request['avatar'], $image);
             $user = User::create(['name' => $request->name, 'email' => $request->email, 'password' => Hash::make($request->password), 'gender' => $request->gender, 'avatar' => $image]);
             $user->assignRole('user');
-            Mail::to($request->email)->send(new ConfirmEmail());
+            Mail::to($request->email)->send(new ConfirmEmail($user->id));
             return $user;
         }
 
@@ -56,7 +56,7 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
-        if($user->is_verified) {
+        if($user->is_Verified) {
             $token = $user->createToken('logintoken')->plainTextToken;
 
             return $token;
